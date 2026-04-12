@@ -1,4 +1,5 @@
 ﻿using CombatExtended;
+using System.Collections.Generic;
 using Verse;
 
 namespace MW2Patch_CombatExtended {

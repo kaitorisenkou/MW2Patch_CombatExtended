@@ -54,7 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MW2CE_BreakpointActions.cs" />
-    <Compile Include="MW2PartsExtension_CEAmmoConversion.cs" />
+    <Compile Include="MW2PartsExtension_CEAmmoUser.cs" />
     <Compile Include="MW2PartsExtension_CEBipod.cs" />
     <Compile Include="MW2PartsExtension_CEFireModes.cs" />
     <Compile Include="MW2PartsExtension_CEUnderbarrel.cs" />
