@@ -53,16 +53,20 @@ namespace MW2Patch_CombatExtended {
                     compAmmo.CurrentAmmo = newProp_AmmoUser.ammoSet.ammoTypes[0].ammo;
                 }*/
                 var compAmmo = thing.TryGetComp<CompAmmoUser>();
-                compAmmo.CurrentAmmo = null;
-                compAmmo.SelectedAmmo = null;
-                compAmmo.Initialize(newProp_AmmoUser);
+                if (compAmmo != null) {
+                    compAmmo.CurrentAmmo = null;
+                    compAmmo.SelectedAmmo = null;
+                    compAmmo.Initialize(newProp_AmmoUser);
+                }
             }
 
             //CompFireModes
             var newProp_FireModes = comp.GetCompProps_FireModes();
             if(newProp_FireModes != null) {
                 var compFMode = thing.TryGetComp<CompFireModes>();
-                compFMode.Initialize(newProp_FireModes);
+                if (compFMode != null) {
+                    compFMode.Initialize(newProp_FireModes);
+                }
             }
 
             //BipodComp
