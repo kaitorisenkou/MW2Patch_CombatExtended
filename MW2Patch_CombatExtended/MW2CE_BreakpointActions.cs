@@ -72,7 +72,8 @@ namespace MW2Patch_CombatExtended {
             //BipodComp
             var compBipod = thing.TryGetComp<BipodComp>();
             if (compBipod != null) {
-                var bipodProp = compBipod.Props;
+                //var bipodProp = compBipod.Props;
+                var bipodProp = new CompProperties_BipodComp();
                 bipodProp.catDef = GetBipodCatDef(comp);
                 bipodProp.swayMult = bipodProp.catDef.swayMult;
                 bipodProp.swayPenalty = bipodProp.catDef.swayPenalty;
@@ -82,6 +83,8 @@ namespace MW2Patch_CombatExtended {
                 bipodProp.ticksToSetUp = bipodProp.catDef.setuptime;
                 bipodProp.warmupMult = bipodProp.catDef.warmup_mult_setup;
                 bipodProp.warmupPenalty = bipodProp.catDef.warmup_mult_NOT_setup;
+
+                compBipod.props = bipodProp;
             }
 
             //CompUnderBarrel
