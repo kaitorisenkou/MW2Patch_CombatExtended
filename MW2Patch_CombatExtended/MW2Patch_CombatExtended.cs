@@ -78,6 +78,8 @@ namespace MW2Patch_CombatExtended {
         }
 
         static void Postfix_BipodStatShouldShowFor(StatRequest req, ref bool __result) {
+            if (!__result)
+                return;
             Thing thing = req.Thing;
             if (thing == null) {
                 __result =
