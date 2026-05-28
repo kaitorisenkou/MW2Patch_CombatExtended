@@ -1,9 +1,11 @@
 ﻿using CombatExtended;
 using HarmonyLib;
+using LudeonTK;
 using ModularWeapons2;
 using RimWorld;
 using RimWorld.Planet;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,6 +14,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Verse;
+using Verse.AI;
 using static HarmonyLib.Code;
 
 namespace MW2Patch_CombatExtended {
@@ -39,6 +42,16 @@ namespace MW2Patch_CombatExtended {
             harmony.Patch(
                 AccessTools.Method(typeof(CompFireModes), nameof(CompFireModes.Initialize)),
                 postfix: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Postfix_CompFireModeInit), null));
+            harmony.Patch(
+                AccessTools.Method(typeof(PawnCapacityUtility), nameof(PawnCapacityUtility.CalculateNaturalPartsAverageEfficiency)),
+                prefix: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Prefix_CalculateNaturalPartsAverageEfficiency), null));
+            /*
+#if DEBUG
+            harmony.Patch(
+                AccessTools.Method(typeof(Verb), "IsStillUsableBy"),
+                postfix: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(DebugPostfix_IsStillUsableBy), null));
+#endif
+            */
 
             Log.Message("[MW2Patch_CE] Harmony patch complete.");
 
@@ -60,7 +73,19 @@ namespace MW2Patch_CombatExtended {
         public static void DebugLogError(object obj) {
             Log.Error(obj.ToString());
         }
-
+#if DEBUG
+        [DebugAction("ModularWeapons2", actionType = DebugActionType.ToolMap, allowedGameStates = AllowedGameStates.PlayingOnMap)]
+        public static void EnsureBayonetTool() {
+            var def = DefDatabase<ModularPartsDef>.GetNamed("Muzzle_ARBayonet");
+            if (def?.effects.tools != null) {
+                foreach (var i in def.effects.tools) {
+                    DebugLogMessage("[MW2] tool: " + i.label + "(" + i.GetType().ToString() + ")");
+                }
+            } else {
+                DebugLogMessage("[MW2] bayonet def" + def != null ? "found, no tools" : "not found");
+            }
+        }
+#endif
 
         static bool Prefix_BipodShouldSetUp(ref bool __result, BipodComp __instance) {
             if(__instance!=null && __instance.Props.catDef == MW2CE_DefOf.MW2CE_noBipod) {
@@ -148,6 +173,46 @@ namespace MW2Patch_CombatExtended {
             }
             DebugLogMessage("[MW2_CE] Transpiler_GetCompByDefType done");
             return instructionList;
+        }
+
+        static bool Prefix_CalculateNaturalPartsAverageEfficiency(ref float __result, HediffSet diffSet, BodyPartGroupDef bodyPartGroup) {
+            CompModularWeapon compMW = diffSet?.pawn?.equipment?.Primary?.TryGetComp<CompModularWeapon>();
+            bool flag = compMW?.Tools.Any(t => t.linkedBodyPartsGroup == bodyPartGroup) ?? false;
+            bool result;
+            if (flag) {
+                __result = 1f;
+                result = false;
+            } else {
+                result = true;
+            }
+            return result;
+        }
+
+        static void DebugPostfix_IsStillUsableBy(Pawn pawn, Verb __instance, bool __result) {
+            if (!__instance.Available()) {
+                DebugLogMessage("[MW2CE]not Available()");
+            }
+            if (!__instance.DirectOwner.VerbsStillUsableBy(pawn)) {
+                DebugLogMessage("[MW2CE]not VerbsStillUsableBy(pawn)");
+            }
+            var dmg = __instance.verbProps.GetDamageFactorFor(__instance, pawn);
+            if (dmg == 0f) {
+                
+            }
+            DebugLogMessage("[MW2CE]GetDamageFactorFor(__instance, pawn): " + dmg);
+            DebugLogMessage("[MW2CE]HediffCompSource: " + __instance.HediffCompSource?.ToString());
+            DebugLogMessage("[MW2CE]AdjustedLinkedBodyPartsGroup: " + __instance.verbProps?.AdjustedLinkedBodyPartsGroup(__instance.tool)?.ToString());
+            if (__instance.verbProps.category == VerbCategory.Ignite) {
+                DebugLogMessage("[MW2CE]VerbCategory.Ignite");
+            }
+            if ((__instance.tool as ToolCE)?.restrictedGender != Gender.None) {
+                DebugLogMessage("[MW2CE]!= Gender.None");
+            }
+            if (!__result) {
+                DebugLogMessage("[MW2CE]" + __instance.ToString() + " is NOT usable by " + pawn.Label);
+            } else {
+                DebugLogMessage("[MW2CE]" + __instance.ToString() + " is usable by " + pawn.Label);
+            }
         }
     }
 }
