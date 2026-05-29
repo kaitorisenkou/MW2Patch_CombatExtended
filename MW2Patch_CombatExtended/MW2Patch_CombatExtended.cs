@@ -45,6 +45,9 @@ namespace MW2Patch_CombatExtended {
             harmony.Patch(
                 AccessTools.Method(typeof(PawnCapacityUtility), nameof(PawnCapacityUtility.CalculateNaturalPartsAverageEfficiency)),
                 prefix: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Prefix_CalculateNaturalPartsAverageEfficiency), null));
+            harmony.Patch(
+                AccessTools.Method(typeof(StatWorker_Magazine), nameof(StatWorker_Magazine.GetValueUnfinalized)),
+                prefix: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Prefix_MagazineStatValueUnfinalized), null));
             /*
 #if DEBUG
             harmony.Patch(
@@ -58,6 +61,15 @@ namespace MW2Patch_CombatExtended {
             MW2Mod.CEBreakPoint_PostOpenGunsmith += MW2CE_BreakpointActions.PostOpenGunsmith;
             MW2Mod.CEBreakPoint_RefleshParts += MW2CE_BreakpointActions.RefleshParts;
             Log.Message("[MW2Patch_CE] Breakpoints initalized.");
+            MW2Mod.statDefsForceNonImmutable.AddRange(new StatDef[]
+            {
+                CE_StatDefOf.MagazineCapacity
+            });
+            MW2Mod.lessIsBetter.AddRange(new string[] {
+                CE_StatDefOf.Bulk.label.CapitalizeFirst(),
+                CE_StatDefOf.Recoil.label.CapitalizeFirst(),
+                CE_StatDefOf.CE_RangedWeapon_RecoilMultiplier.label.CapitalizeFirst()
+            });
         }
         [Conditional("DEBUG")]
         public static void DebugLogMessage(object obj) {
@@ -186,6 +198,19 @@ namespace MW2Patch_CombatExtended {
                 result = true;
             }
             return result;
+        }
+
+        static bool Prefix_MagazineStatValueUnfinalized(StatRequest req, ref float __result) {
+            var compMW = req.Thing?.TryGetComp<CompModularWeapon>();
+            if (compMW == null) {
+                return true;
+            }
+            var ammoUser = req.Thing.TryGetComp<CompAmmoUser>();
+            if (ammoUser == null) {
+                return true;
+            }
+            __result = ammoUser.Props.magazineSize;
+            return false;
         }
 
         static void DebugPostfix_IsStillUsableBy(Pawn pawn, Verb __instance, bool __result) {
