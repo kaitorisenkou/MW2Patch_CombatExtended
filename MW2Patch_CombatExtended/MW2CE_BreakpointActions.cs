@@ -109,7 +109,8 @@ namespace MW2Patch_CombatExtended {
             }
             var result = new CompProperties_AmmoUser();
             //変更する奴
-            result.magazineSize = baseProp.magazineSize + modExs.Select(t => t.magazineSizeOffset).Sum();
+            result.magazineSize = (baseProp.magazineSize+ modExs.Select(t => t.magazineSizeOffset).Sum())
+                * modExs.Select(t => t.magazineSizeMultiplier).Sum();
             result.reloadTime =
                 (baseProp.reloadTime + modExs.Select(t => t.reloadTimeOffset).Sum())
                 * modExs.Select(t => t.reloadTimeFactor).Sum();
