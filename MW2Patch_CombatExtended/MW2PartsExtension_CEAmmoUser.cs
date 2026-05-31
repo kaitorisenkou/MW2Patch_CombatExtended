@@ -9,9 +9,9 @@ namespace MW2Patch_CombatExtended {
     public class MW2PartsExtension_CEAmmoUser : DefModExtension, IPartsModExtensionStatChangeText {
         public AmmoSetDef ammoSetOverride = null;
         public int magazineSizeOffset = 0;
-        public float magazineSizeMultiplier = 1.0f;
+        public float magazineSizeMultiplier = 0;
         public float reloadTimeOffset = 0;
-        public float reloadTimeFactor = 1.0f;
+        public float reloadTimeFactor = 0;
 
 
         public IEnumerable<(TaggedString text, int priority)> Texts {
