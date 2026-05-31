@@ -48,6 +48,13 @@ namespace MW2Patch_CombatExtended {
             harmony.Patch(
                 AccessTools.Method(typeof(StatWorker_Magazine), nameof(StatWorker_Magazine.GetValueUnfinalized)),
                 prefix: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Prefix_MagazineStatValueUnfinalized), null));
+            harmony.Patch(
+                AccessTools.Method(typeof(StatWorker_Magazine), nameof(StatWorker_Magazine.GetStatDrawEntryLabel)),
+                transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_MagazineStatLabel), null));
+            harmony.Patch(
+                AccessTools.Method(typeof(StatWorker_Magazine), nameof(StatWorker_Magazine.GetExplanationUnfinalized)),
+                transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_MagazinetExplanation), null));
+
             /*
 #if DEBUG
             harmony.Patch(
@@ -63,14 +70,29 @@ namespace MW2Patch_CombatExtended {
             Log.Message("[MW2Patch_CE] Breakpoints initalized.");
             MW2Mod.statDefsForceNonImmutable.AddRange(new StatDef[]
             {
-                CE_StatDefOf.MagazineCapacity
+                CE_StatDefOf.MagazineCapacity,
+                CE_StatDefOf.ReloadTime,
+                CE_StatDefOf.ReloadSpeed
             });
             MW2Mod.lessIsBetter.AddRange(new string[] {
                 CE_StatDefOf.Bulk.label.CapitalizeFirst(),
                 CE_StatDefOf.Recoil.label.CapitalizeFirst(),
                 CE_StatDefOf.CE_RangedWeapon_RecoilMultiplier.label.CapitalizeFirst()
             });
+            CombatExtended.Compatibility.Patches.UsedAmmoCallbacks.Add(UsedAmmoInParts);
+            Log.Message("[MW2Patch_CE] Misc initializations complete.");
         }
+        public static IEnumerable<ThingDef> UsedAmmoInParts() {
+            foreach (var i in DefDatabase<ModularPartsDef>.AllDefsListForReading) {
+                var ammoset = i?.GetModExtension<MW2PartsExtension_CEAmmoUser>()?.ammoSetOverride;
+                if (ammoset != null){
+                    foreach(var j in ammoset.ammoTypes) {
+                        yield return j.ammo;
+                    }
+                }
+            }
+        }
+
         [Conditional("DEBUG")]
         public static void DebugLogMessage(object obj) {
             Log.Message(obj);
@@ -211,6 +233,84 @@ namespace MW2Patch_CombatExtended {
             }
             __result = ammoUser.Props.magazineSize;
             return false;
+        }
+        /// <summary>
+        /// result = GetMagSize(optionalReq).ToString() + " / " + compProperties_AmmoUser2.reloadTime...
+        ///         |
+        ///         V
+        /// result = GetMagSize(optionalReq).ToString() + " / " + GetReloadTimeForStatLabel(...
+        /// </summary>
+        static IEnumerable<CodeInstruction> Transpiler_MagazineStatLabel(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+            int patchCount = 0;
+            var instructionList = instructions.ToList();
+            var targetInfo = AccessTools.Field(typeof(CompProperties_AmmoUser), nameof(CompProperties_AmmoUser.reloadTime));
+            for (int i = 0; i < instructionList.Count; i++) {
+                if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == targetInfo) {
+                    instructionList.InsertRange(i + 1, new CodeInstruction[] {
+                        new CodeInstruction(OpCodes.Ldarg_S,4),
+                        new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(MW2Patch_CombatExtended), nameof(GetReloadTimeForStatLabel)))
+                    });
+                    patchCount++;
+                }
+                if (patchCount > 100) {
+                    Log.Error("[MW2_CE]patch failed : Transpiler_MagazineStatLabel (infinity loop detected)");
+                    return instructions;
+                }
+            }
+            if (patchCount < 2) {
+                Log.Error("[MW2_CE]patch failed : Transpiler_MagazineStatLabel (patchCount:" + patchCount + ")");
+            }
+            DebugLogMessage("[MW2_CE] Transpiler_MagazineStatLabel done");
+            return instructionList;
+        }
+        static IEnumerable<CodeInstruction> Transpiler_MagazinetExplanation(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+            int patchCount = 0;
+            var instructionList = instructions.ToList();
+            var targetInfo1 = AccessTools.Field(typeof(CompProperties_AmmoUser), nameof(CompProperties_AmmoUser.magazineSize));
+            var targetInfo2 = AccessTools.Field(typeof(CompProperties_AmmoUser), nameof(CompProperties_AmmoUser.reloadTime));
+            for (int i = 0; i < instructionList.Count; i++) {
+                if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == targetInfo1) {
+                    instructionList.InsertRange(i + 1, new CodeInstruction[] {
+                        new CodeInstruction(OpCodes.Ldarg_1),
+                        new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(MW2Patch_CombatExtended), nameof(GetMagSizeForStatLabel)))
+                    });
+                    patchCount++;
+                }
+                if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == targetInfo2) {
+                    instructionList.InsertRange(i + 1, new CodeInstruction[] {
+                        new CodeInstruction(OpCodes.Ldarg_1),
+                        new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(MW2Patch_CombatExtended), nameof(GetReloadTimeForStatLabel)))
+                    });
+                    patchCount++;
+                }
+                if (patchCount > 100) {
+                    Log.Error("[MW2_CE]patch failed : Transpiler_MagazineStatLabel (infinity loop detected)");
+                    return instructions;
+                }
+            }
+            if (patchCount < 2) {
+                Log.Error("[MW2_CE]patch failed : Transpiler_MagazineStatLabel (patchCount:" + patchCount + ")");
+            }
+            DebugLogMessage("[MW2_CE] Transpiler_MagazineStatLabel done");
+            return instructionList;
+        }
+        public static float GetMagSizeForStatLabel(int defaultValue, StatRequest req) {
+            if (req.HasThing) {
+                var ammouser = req.Thing.TryGetComp<CompAmmoUser>();
+                if (ammouser != null) {
+                    return ammouser.Props.magazineSize;
+                }
+            }
+            return defaultValue;
+        }
+        public static float GetReloadTimeForStatLabel(float defaultValue, StatRequest req) {
+            if (req.HasThing) {
+                var ammouser = req.Thing.TryGetComp<CompAmmoUser>();
+                if (ammouser != null) {
+                    return ammouser.Props.reloadTime;
+                }
+            }
+            return defaultValue;
         }
 
         static void DebugPostfix_IsStillUsableBy(Pawn pawn, Verb __instance, bool __result) {
