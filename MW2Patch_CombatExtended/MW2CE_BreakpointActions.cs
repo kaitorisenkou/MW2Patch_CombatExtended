@@ -2,7 +2,6 @@
 using ModularWeapons2;
 using RimWorld;
 using RimWorld.Planet;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -110,11 +109,11 @@ namespace MW2Patch_CombatExtended {
             }
             var result = new CompProperties_AmmoUser();
             //変更する奴
-            result.magazineSize = (int)Math.Floor((baseProp.magazineSize+ modExs.Select(t => t.magazineSizeOffset).Sum())
-                * modExs.Select(t => t.magazineSizeMultiplier).Average());
+            result.magazineSize = (baseProp.magazineSize+ modExs.Select(t => t.magazineSizeOffset).Sum())
+                * modExs.Select(t => t.magazineSizeMultiplier).Sum();
             result.reloadTime =
                 (baseProp.reloadTime + modExs.Select(t => t.reloadTimeOffset).Sum())
-                * modExs.Select(t => t.reloadTimeFactor).Average();
+                * modExs.Select(t => t.reloadTimeFactor).Sum();
             result.ammoSet =
                 modExs.FirstOrFallback(t => t.ammoSetOverride != null)?.ammoSetOverride
                 ?? baseProp.ammoSet;
