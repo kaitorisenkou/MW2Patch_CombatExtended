@@ -81,6 +81,9 @@ namespace MW2Patch_CombatExtended {
                 CE_StatDefOf.SwayFactor.label.CapitalizeFirst(),
                 CE_StatDefOf.CE_RangedWeapon_RecoilMultiplier.label.CapitalizeFirst()
             });
+            MW2Mod.verbTypes_ActivateTacDevice.AddRange(new Type[] {
+                typeof(Verb_LaunchProjectileCE)
+            });
             CombatExtended.Compatibility.Patches.UsedAmmoCallbacks.Add(UsedAmmoInParts);
             Log.Message("[MW2Patch_CE] Misc initializations complete.");
         }
