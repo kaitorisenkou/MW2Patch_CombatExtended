@@ -77,6 +77,8 @@ namespace MW2Patch_CombatExtended {
             MW2Mod.lessIsBetter.AddRange(new string[] {
                 CE_StatDefOf.Bulk.label.CapitalizeFirst(),
                 CE_StatDefOf.Recoil.label.CapitalizeFirst(),
+                CE_StatDefOf.ShotSpread.label.CapitalizeFirst(),
+                CE_StatDefOf.SwayFactor.label.CapitalizeFirst(),
                 CE_StatDefOf.CE_RangedWeapon_RecoilMultiplier.label.CapitalizeFirst()
             });
             CombatExtended.Compatibility.Patches.UsedAmmoCallbacks.Add(UsedAmmoInParts);
