@@ -24,7 +24,7 @@ namespace MW2Patch_CombatExtended {
                     builder.Clear();
                 }
                 if (magazineSizeOffset != 0) {
-                    builder.Append(CE_StatDefOf.MagazineCapacity.label);
+                    builder.Append("CE_MagazineSize".Translate());
                     builder.Append(" ");
                     if (magazineSizeOffset > 0) {
                         builder.Append("<color=\"green\">+");
@@ -37,7 +37,7 @@ namespace MW2Patch_CombatExtended {
                     builder.Clear();
                 }
                 if (Math.Abs(magazineSizeMultiplier) > 0.0001f) {
-                    builder.Append(CE_StatDefOf.MagazineCapacity.label);
+                    builder.Append("CE_MagazineSize".Translate());
                     builder.Append(" ");
                     if (magazineSizeOffset > 0) {
                         builder.Append("<color=\"green\">+");
@@ -50,7 +50,7 @@ namespace MW2Patch_CombatExtended {
                     builder.Clear();
                 }
                 if (reloadTimeOffset != 0) {
-                    builder.Append(CE_StatDefOf.MagazineCapacity.label);
+                    builder.Append("CE_ReloadTime".Translate());
                     builder.Append(" ");
                     if (reloadTimeOffset > 0) {
                         builder.Append("<color=\"red\">+");
@@ -63,7 +63,7 @@ namespace MW2Patch_CombatExtended {
                     builder.Clear();
                 }
                 if (Math.Abs(reloadTimeFactor) > 0.0001f) {
-                    builder.Append(CE_StatDefOf.MagazineCapacity.label);
+                    builder.Append("CE_ReloadTime".Translate());
                     builder.Append(" ");
                     if (reloadTimeFactor > 0) {
                         builder.Append("<color=\"red\">+");
