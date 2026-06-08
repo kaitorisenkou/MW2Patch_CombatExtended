@@ -14,6 +14,8 @@ namespace MW2Patch_CombatExtended {
         public CompProperties_FireModes propsFireModesUnderBarrel;
         */
         public CompProperties_UnderBarrel underBarrelProps;
+        // No effect when < 0
+        public float ShotSpreadOverride = -1f;
 
 
         static Lazy<StatDef> statDef_ubgl = new Lazy<StatDef>(() => DefDatabase<StatDef>.GetNamed("UBGLInfo"));

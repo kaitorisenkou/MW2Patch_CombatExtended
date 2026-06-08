@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Verse;
 using Verse.AI;
 using static HarmonyLib.Code;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MW2Patch_CombatExtended {
     [StaticConstructorOnStartup]
@@ -54,6 +55,21 @@ namespace MW2Patch_CombatExtended {
             harmony.Patch(
                 AccessTools.Method(typeof(StatWorker_Magazine), nameof(StatWorker_Magazine.GetExplanationUnfinalized)),
                 transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_MagazinetExplanation), null));
+            harmony.Patch(
+                AccessTools.Method(typeof(Verb_LaunchProjectileCE), nameof(Verb_LaunchProjectileCE.TryCastShot)),
+                transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_LaunchProjectileCE), null));
+            harmony.Patch(
+                AccessTools.Method(
+                    typeof(Verb_LaunchProjectileCE), nameof(Verb_LaunchProjectileCE.ShiftVecReportFor),
+                    new Type[] {typeof(LocalTargetInfo),typeof(IntVec3)}
+                    ),
+                transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_LaunchProjectileCE), null));
+            harmony.Patch(
+                AccessTools.Method(
+                    typeof(Verb_LaunchProjectileCE), nameof(Verb_LaunchProjectileCE.ShiftVecReportFor),
+                    new Type[] { typeof(GlobalTargetInfo)}
+                    ),
+                transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_LaunchProjectileCE), null));
 
             /*
 #if DEBUG
@@ -313,6 +329,51 @@ namespace MW2Patch_CombatExtended {
                 var ammouser = req.Thing.TryGetComp<CompAmmoUser>();
                 if (ammouser != null) {
                     return ammouser.Props.reloadTime;
+                }
+            }
+            return defaultValue;
+        }
+
+
+        static IEnumerable<CodeInstruction> Transpiler_LaunchProjectileCE(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+            int patchCount = 0;
+            var instructionList = instructions.ToList();
+            var targetInfo1 = AccessTools.Method(typeof(StatExtension), nameof(StatExtension.GetStatValue));
+            var targetInfo2 = AccessTools.Field(typeof(CE_StatDefOf), nameof(CE_StatDefOf.ShotSpread));
+            for (int i = 0; i < instructionList.Count; i++) {
+                if (instructionList[i].opcode == OpCodes.Call && (MethodInfo)instructionList[i].operand == targetInfo1 &&
+                    instructionList[i-3].opcode == OpCodes.Ldsfld && (FieldInfo)instructionList[i-3].operand == targetInfo2
+                    ) {
+                    instructionList.InsertRange(i + 1, new CodeInstruction[] {
+                        new CodeInstruction(OpCodes.Ldarg_0),
+                        new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(MW2Patch_CombatExtended), nameof(GetOverriddenShotSpread)))
+                    });
+                    patchCount++;
+                }
+            }
+            if (patchCount < 1) {
+                Log.Error("[MW2_CE]patch failed : Transpiler_TryCastShotLPCE (patchCount:" + patchCount + ")");
+            }
+            DebugLogMessage("[MW2_CE] Transpiler_TryCastShotLPCE done");
+            return instructionList;
+        }
+        public static float GetOverriddenShotSpread(float defaultValue, Verb_LaunchProjectileCE verb) {
+            DebugLogMessage("[MW2CE] GetOverriddenShotSpread: defaultValue " + defaultValue);
+            var eq = verb?.EquipmentSource;
+            if (eq == null) {
+                return defaultValue;
+            }
+            var compUB = eq.TryGetComp<CompUnderBarrel>();
+            if (compUB == null || !compUB.usingUnderBarrel) {
+                return defaultValue;
+            }
+            var ext =
+                verb?.EquipmentSource?.TryGetComp<CompModularWeapon>()?
+                .GetAllModExtensionsFromParts<MW2PartsExtension_CEUnderbarrel>();
+            foreach(var i in ext) {
+                if (i.ShotSpreadOverride >= 0) {
+                    DebugLogMessage("[MW2CE] override in GetOverriddenShotSpread -> " + i.ShotSpreadOverride);
+                    return i.ShotSpreadOverride;
                 }
             }
             return defaultValue;
