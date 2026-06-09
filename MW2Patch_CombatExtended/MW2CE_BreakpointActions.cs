@@ -120,7 +120,8 @@ namespace MW2Patch_CombatExtended {
                 ?? baseProp.ammoSet;
             //元のままのやつ
             result.AmmoGenPerMagOverride = baseProp.AmmoGenPerMagOverride;
-            result.reloadOneAtATime = baseProp.reloadOneAtATime;
+            result.reloadOneAtATime = modExs.FirstOrFallback(t => t.SetreloadOAaT != null)?.SetreloadOAaT
+                ?? baseProp.reloadOneAtATime;
             result.throwMote = baseProp.throwMote;
             result.loadedAmmoBulkFactor = baseProp.loadedAmmoBulkFactor;
 
