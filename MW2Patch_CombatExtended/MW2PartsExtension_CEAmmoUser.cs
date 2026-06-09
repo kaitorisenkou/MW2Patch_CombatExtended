@@ -10,6 +10,7 @@ namespace MW2Patch_CombatExtended {
         public AmmoSetDef ammoSetOverride = null;
         public int magazineSizeOffset = 0;
         public float magazineSizeMultiplier = 0;
+        public bool? SetreloadOAaT = null;
         public float reloadTimeOffset = 0;
         public float reloadTimeFactor = 0;
 
