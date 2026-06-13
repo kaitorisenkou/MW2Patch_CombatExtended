@@ -70,6 +70,42 @@ namespace MW2Patch_CombatExtended {
                     new Type[] { typeof(GlobalTargetInfo)}
                     ),
                 transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_LaunchProjectileCE), null));
+            MethodInfo[] Methods_StatWorkerMelee1 = {
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeArmorPenetration),
+                    nameof(CombatExtended.StatWorker_MeleeArmorPenetration.ShouldShowFor)),
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeArmorPenetration), 
+                    nameof(CombatExtended.StatWorker_MeleeArmorPenetration.GetExplanationUnfinalized)),
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeArmorPenetration),
+                    "GetFinalDisplayValue"),
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeDamageAverage),
+                    nameof(CombatExtended.StatWorker_MeleeDamageAverage.ShouldShowFor)),
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeDamageAverage),
+                    nameof(CombatExtended.StatWorker_MeleeDamageAverage.GetExplanationUnfinalized)),
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeDamageAverage),
+                    nameof(CombatExtended.StatWorker_MeleeDamageAverage.GetValueUnfinalized))
+            };
+            foreach (var i in Methods_StatWorkerMelee1) {
+                DebugLogMessage("[MW2CE]patching "+i.Name);
+                harmony.Patch(i, transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_StatWorkerMelee), null));
+            }
+            MethodInfo[] Methods_StatWorkerMelee2 = {
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeDamage),
+                    nameof(CombatExtended.StatWorker_MeleeDamage.GetExplanationUnfinalized)),
+                AccessTools.Method(
+                    typeof(CombatExtended.StatWorker_MeleeDamage),
+                    "GetFinalDisplayValue")
+            };
+            foreach (var i in Methods_StatWorkerMelee2) {
+                DebugLogMessage("[MW2CE]patching " + i.Name);
+                harmony.Patch(i, transpiler: new HarmonyMethod(typeof(MW2Patch_CombatExtended), nameof(Transpiler_StatWorkerMeleeDmg), null));
+            }
 
             /*
 #if DEBUG
@@ -377,6 +413,54 @@ namespace MW2Patch_CombatExtended {
                 }
             }
             return defaultValue;
+        }
+
+
+        static IEnumerable<CodeInstruction> Transpiler_StatWorkerMelee(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+            int patchCount = 0;
+            var instructionList = instructions.ToList();
+            var targetInfo = AccessTools.Method(typeof(CE_Utility), "GetThingDefTools");
+            for (int i = 0; i < instructionList.Count; i++) {
+                if (instructionList[i].opcode == OpCodes.Call && (MethodInfo)instructionList[i].operand == targetInfo
+                    ) {
+                    instructionList.InsertRange(i + 1, new CodeInstruction[] {
+                        new CodeInstruction(OpCodes.Ldarg_1),
+                        new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(MW2Patch_CombatExtended), nameof(GetToolsForMeleeStat)))
+                    });
+                    patchCount++;
+                }
+            }
+            if (patchCount < 1) {
+                Log.Error("[MW2_CE]patch failed : Transpiler_StatWorkerMelee (patchCount:" + patchCount + ")");
+            }
+            DebugLogMessage("[MW2_CE] Transpiler_StatWorkerMelee done");
+            return instructionList;
+        }
+        static IEnumerable<CodeInstruction> Transpiler_StatWorkerMeleeDmg(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+            int patchCount = 0;
+            var instructionList = instructions.ToList();
+            var targetInfo = AccessTools.Field(typeof(ThingDef), nameof(ThingDef.tools));
+            for (int i = 0; i < instructionList.Count; i++) {
+                if (instructionList[i].opcode == OpCodes.Ldfld && (FieldInfo)instructionList[i].operand == targetInfo
+                    ) {
+                    instructionList.InsertRange(i + 1, new CodeInstruction[] {
+                        new CodeInstruction(OpCodes.Ldarg_1),
+                        new CodeInstruction(OpCodes.Call,AccessTools.Method(typeof(MW2Patch_CombatExtended), nameof(GetToolsForMeleeStat)))
+                    });
+                    patchCount++;
+                }
+            }
+            if (patchCount < 1) {
+                Log.Error("[MW2_CE]patch failed : Transpiler_StatWorkerMeleeDmg (patchCount:" + patchCount + ")");
+            }
+            DebugLogMessage("[MW2_CE] Transpiler_StatWorkerMeleeDmg done");
+            return instructionList;
+        }
+        public static List<Tool> GetToolsForMeleeStat(List<Tool> original, StatRequest req) {
+            if (!req.HasThing) return original;
+            var comp=req.Thing.TryGetComp<CompModularWeapon>();
+            if (comp == null) return original;
+            return original.Concat(comp.Tools).ToList();
         }
 
         static void DebugPostfix_IsStillUsableBy(Pawn pawn, Verb __instance, bool __result) {
