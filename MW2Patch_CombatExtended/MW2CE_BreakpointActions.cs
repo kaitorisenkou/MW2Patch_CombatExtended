@@ -118,7 +118,7 @@ namespace MW2Patch_CombatExtended {
             result.ammoSet =
                 modExs.FirstOrFallback(t => t.ammoSetOverride != null)?.ammoSetOverride
                 ?? baseProp.ammoSet;
-            result.reloadOneAtATime = modExs.FirstOrFallback(t => t.SetreloadOAaT != null)?.SetreloadOAaT
+            result.reloadOneAtATime = modExs.FirstOrFallback(t => t.reloadOneAtATimeOverride != null)?.reloadOneAtATimeOverride
                 ?? baseProp.reloadOneAtATime;
             //元のままのやつ
             result.AmmoGenPerMagOverride = baseProp.AmmoGenPerMagOverride;
