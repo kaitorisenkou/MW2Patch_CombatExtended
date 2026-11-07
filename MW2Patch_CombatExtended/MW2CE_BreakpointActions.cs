@@ -102,7 +102,7 @@ namespace MW2Patch_CombatExtended {
 
         public static CompProperties_AmmoUser GetCompProps_AmmoUser(this CompModularWeapon compMW) {
             var thing = compMW.parent;
-            var baseProp = thing?.def.comps?.First(t => t.GetType() == typeof(CompProperties_AmmoUser)) as CompProperties_AmmoUser;
+            var baseProp = thing?.def.comps?.FirstOrFallback(t => t.GetType() == typeof(CompProperties_AmmoUser), null) as CompProperties_AmmoUser;
             if (baseProp == null) return null;
             var modExs = compMW.GetAllModExtensionsFromParts<MW2PartsExtension_CEAmmoUser>();
             if (modExs.EnumerableNullOrEmpty()) {
@@ -129,7 +129,7 @@ namespace MW2Patch_CombatExtended {
         }
         public static CompProperties_FireModes GetCompProps_FireModes(this CompModularWeapon compMW) {
             var thing = compMW.parent;
-            var baseProp = thing?.def.comps?.First(t => t.GetType() == typeof(CompProperties_FireModes)) as CompProperties_FireModes;
+            var baseProp = thing?.def.comps?.FirstOrFallback(t => t.GetType() == typeof(CompProperties_FireModes), null) as CompProperties_FireModes;
             if (baseProp == null) return null;
             var modExs = compMW.GetAllModExtensionsFromParts<MW2PartsExtension_CEFireModes>();
             if (modExs.EnumerableNullOrEmpty()) {
@@ -164,12 +164,12 @@ namespace MW2Patch_CombatExtended {
         public static CompProperties_UnderBarrel GetCompProps_UnderBarrel(this CompModularWeapon compMW) {
             var result =
                 compMW.GetFirstModExtensionsFromParts<MW2PartsExtension_CEUnderbarrel>()?.underBarrelProps ??
-                compMW.parent.def.comps.First(t => t.GetType() == typeof(CompProperties_UnderBarrel));
+                compMW.parent?.def?.comps?.FirstOrFallback(t => t.GetType() == typeof(CompProperties_UnderBarrel), null);
             return result as CompProperties_UnderBarrel;
         }
         public static BipodCategoryDef GetBipodCatDef(this CompModularWeapon compMW) {
             var thing = compMW.parent;
-            var baseProp = thing?.def.comps?.First(t => t.GetType() == typeof(CompProperties_BipodComp)) as CompProperties_BipodComp;
+            var baseProp = thing?.def.comps?.FirstOrFallback(t => t.GetType() == typeof(CompProperties_BipodComp), null) as CompProperties_BipodComp;
             if (baseProp == null) return MW2CE_DefOf.MW2CE_noBipod;
             var modExt = compMW.GetFirstModExtensionsFromParts<MW2PartsExtension_CEBipod>();
             return modExt?.categoryDef ?? baseProp.catDef;
